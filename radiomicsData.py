@@ -86,12 +86,23 @@ def readData(csvPath):
                 gFormat_FeautreID = np.vstack((featureID, segmentArteryList, segmentCapillaryList, segmentFatList, segmentTissueList))
                 gFormat_FeautreID = gFormat_FeautreID.transpose()
 
-                print(gFormat)
-                print(np.shape(gFormat))
-                print("-----------------------")
-                print(gFormat_FeautreID)
-                print(np.shape(gFormat_FeautreID))
+                return gFormat, gFormat_FeautreID, featureID, segmentArteryList, segmentCapillaryList, segmentFatList, segmentTissueList
 
-                return gFormat, gFormat_FeautreID
 
-readData(csvPath)
+def writeDataToSplitCSV(filename, featureID, segmentArteryList, segmentCapillaryList, segmentFatList, segmentTissueList):
+
+    csvList = ['featureID','segmentArtery', 'segmentCapillary', 'segmentFat', 'segmentTissue']
+    labelList = [featureID, segmentArteryList,segmentCapillaryList, segmentFatList, segmentTissueList]
+
+    for i in range( len(csvList) ):
+        with open(csvPath + "\\CarotidArteryData_SpilitLabels\\" + filename + "_" + csvList[i] + ".csv", 'w', newline="") as file:
+            writer = csv.writer(file)
+            writer.writerow(labelList[i])
+        print("write" + csvList[i] +"csv ")
+
+
+gFormat, gFormat_FeautreID,\
+featureID, segmentArteryList, segmentCapillaryList, segmentFatList, segmentTissueList = readData(csvPath)
+
+writeDataToSplitCSV('91307196_L',featureID, segmentArteryList,
+                    segmentCapillaryList, segmentFatList, segmentTissueList)
