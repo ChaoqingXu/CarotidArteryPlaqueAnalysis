@@ -13,7 +13,7 @@ from os.path import isfile, join
 import csv
 
 
-csvPath = r'D:\\OverleafProj\\CarotidArteryPlaqueAnalysis\\CarotidArteryData'
+csvPath = r'D:\\OverleafProj\\CarotidArteryPlaqueAnalysis\\CarotidArteryData_PIAO'
 csvSplitPath = r'D:\\OverleafProj\\CarotidArteryPlaqueAnalysis\\CarotidArteryData_SpilitLabels'
 
 dataRow = [ 'Image type',\
@@ -31,7 +31,8 @@ def writeDataToSplitCSV(csvfile, featureID, segmentCalciumList, segmentFibrousLi
     print("write " + str(csvfile))
     fileName = os.path.basename(csvfile).split('.')[0]
 
-    csvList = ['featureID','segmentArtery', 'segmentCapillary', 'segmentFat', 'segmentTissue']
+    csvList = ['featureID', 'segment_Calcium',
+               'segment_Fibrous', 'segment_IPHlipid', 'segment_IPH']
     labelList = [featureID, segmentCalciumList,segmentFibrousList, segmentIPHlipidList, segmentIPHList]
 
     for i in range( len(csvList) ):
@@ -45,6 +46,7 @@ def writeDataToSplitCSV(csvfile, featureID, segmentCalciumList, segmentFibrousLi
 # read radiomics csv data, reorganize it as a standard format(correct the feature order), and write to split csv files
 def readData(csvPath):
     csvFiles = [f for f in listdir(csvPath) if isfile(join(csvPath, f))]
+
     for fileName in csvFiles: 
         with open(csvPath + "\\" + fileName, 'r') as csvfile:
             reader = csv.reader(csvfile, delimiter=',')
@@ -62,7 +64,7 @@ def readData(csvPath):
             segmentCalciumList, segmentFibrousList, segmentIPHlipidList, segmentIPHList = [], [], [], [], [], [], []
             for i in range(len(gRow)):
                 if gRow[i] == 'Image type': 
-                   imageTypeList = g[:, [i]]
+                    imageTypeList = g[:, [i]]
                 if gRow[i] == 'Feature Class':
                     featureClassList = g[:, [i]]
                 if gRow[i] == 'Feature Name':
@@ -78,8 +80,9 @@ def readData(csvPath):
 
             # gFormat = np.hstack((imageTypeList, featureClassList, featureNameList,
             #             segmentCalciumList, segmentFibrousList, segmentIPHlipidList, segmentIPHList))
-        
+
             ## convert to split 4 labels and featureID
+
             imageTypeList_tmp, featureClassList_tmp, featureNameList_tmp = [], [], []
             segmentCalciumList_tmp, segmentFibrousList_tmp, segmentIPHlipidList_tmp, segmentIPHList_tmp = [], [], [], []
             for a, b, c, d, e, f, g in zip(imageTypeList, featureClassList, featureNameList, segmentCalciumList, segmentFibrousList, segmentIPHlipidList, segmentIPHList):
@@ -96,9 +99,11 @@ def readData(csvPath):
                 'Feature Class': featureClassList_tmp,
                 'Feature Name': featureNameList_tmp
             })
+
             df = pd.DataFrame(featureID)
             df["featureID"] = df['Image Type'] + "_" + df['Feature Class'] + "_" + df['Feature Name']
             featureID = df["featureID"].to_numpy()
+
             segmentCalciumList, segmentFibrousList, segmentIPHlipidList, segmentIPHList = segmentCalciumList_tmp, segmentFibrousList_tmp, segmentIPHlipidList_tmp, segmentIPHList_tmp
 
             gFormat_FeautreID = np.vstack((featureID, segmentCalciumList, segmentFibrousList, segmentIPHlipidList, segmentIPHList))
@@ -106,10 +111,6 @@ def readData(csvPath):
 
             writeDataToSplitCSV(fileName, featureID, segmentCalciumList,
                                 segmentFibrousList, segmentIPHlipidList, segmentIPHList)
-
-
-
-
 
 readData(csvPath)
 
