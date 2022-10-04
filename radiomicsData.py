@@ -124,8 +124,8 @@ def writeMergefile(sourceFileList,  targetFile):
     with open(targetFile, 'w'):
         pass  # clean the file
     for i in sourceFileList:
-        fr = open(i, 'rb').read()
-        with open(targetFile, 'ab') as f:
+        fr = open(i, 'r').read()
+        with open(targetFile, 'a') as f:
             f.write(fr)
 
 
@@ -161,39 +161,101 @@ def MergeCSV(sourcePath,  outputPath):
             writeMergefile(sourceFileList,  targetFile)
 
 
+def writeHTMLplotCSV(sourceFileList, targetFile):
+    with open(targetFile, 'w'):
+        pass  # clean the file
+    for i in sourceFileList:
+        filename = os.path.basename(i).split('.')[0]
+        fr = open(i, 'r').read()
+        with open(targetFile, 'a') as f:
+            f.write( str(filename) +',' )
+            f.write(fr)
 
+
+## integrate CSV files to a CSV for HTML ploting 
 def HTMLplotCSV(sourcePath,  outputPath):
     keys = ['featureID', 'Calcium', 'Fibrous', 'IPH_lipid', 'IPH']
     csvFiles = [f for f in listdir(sourcePath) if isfile(join(sourcePath, f))]
+    HTMLCSVfile = outputPath + "/HTMLCSVfile.csv"
+    HTMLPlotCSV = outputPath + "/HTMLPlotCSV.csv"
 
     for key in keys:
         if key is 'featureID':
-            targetFile = outputPath + "/" + key + ".csv"
+            targetFile = outputPath + "/" + key + "_plot.csv"
+            featureID_list = []
             for fileName in csvFiles:
                 if key in fileName:
                     sourceFile = sourcePath + "/" + fileName
-                    shutil.copy(sourceFile, targetFile)  # copy and rename
+                    with open(sourcePath + "\\" + fileName, 'r') as csvfile:
+                        reader = csv.reader(csvfile, delimiter=',')
+                        g = []
+                        for row in reader:
+                            g.append(row)
+                        g = np.array(g)
+                        tmp = g[[0], :]
+            featureID_list = tmp[0] 
+            featureID_list = np.insert(featureID_list, 0, "subject_label")
+            
+            with open(targetFile, 'w'):
+                pass  # clean the file
+            with open(targetFile, 'w', newline="") as file:
+                writer = csv.writer(file)
+                writer.writerow(featureID_list)
 
-        # if (key is not 'featureID') and (key is not 'IPH'):
-        #     targetFile = outputPath + "/" + key + ".csv"
-        #     sourceFileList = []
-        #     for fileName in csvFiles:
-        #         if key in fileName:
-        #             sourceFile = sourcePath + "/" + fileName
-        #             sourceFileList.append(sourceFile)
-        #     writeMergefile(sourceFileList,  targetFile)
+        if (key is not 'featureID') and (key is not 'IPH'):
+            targetFile = outputPath + "/" + key + ".csv"
+            sourceFileList = []
+            for fileName in csvFiles:
+                if key in fileName:
+                    sourceFile = sourcePath + "/" + fileName
+                    sourceFileList.append(sourceFile)
+            writeHTMLplotCSV(sourceFileList, targetFile)
+        
+        if key is 'IPH':
+            targetFile = outputPath + "/" + key + ".csv"
+            sourceFileList = []
+            for fileName in csvFiles:
+                if ('IPH' in fileName) and ('IPH_lipid' not in fileName):
+                    sourceFile = sourcePath + "/" + fileName
+                    sourceFileList.append(sourceFile)
+            writeHTMLplotCSV(sourceFileList,  targetFile)
 
-        # if key is 'IPH':
-        #     targetFile = outputPath + "/" + key + ".csv"
-        #     sourceFileList = []
-        #     for fileName in csvFiles:
-        #         if ('IPH' in fileName) and ('IPH_lipid' not in fileName):
-        #             sourceFile = sourcePath + "/" + fileName
-        #             sourceFileList.append(sourceFile)
-        #     writeMergefile(sourceFileList,  targetFile)
+        ## merge files to a csv 
+        htmlCSV = [f for f in listdir(outputPath) if isfile(join(outputPath, f))]
+        htmlCSVList = []
+        for key in keys:
+            if (key is not 'IPH'):
+                for fileName in htmlCSV:
+                    if key in fileName:
+                        htmlCSVList.append(outputPath + "/" + fileName)
+            if key is 'IPH':
+                for fileName in htmlCSV:
+                    if ('IPH' in fileName) and ('IPH_lipid' not in fileName):
+                        htmlCSVList.append(outputPath + "/" + fileName)
 
+        writeMergefile(htmlCSVList,  HTMLCSVfile)
 
+    ## read integrated CSV file "HTMLCSVfile.csv", then transpose and delete unuseful collumns.
+    HTMLplot_list = []
+    with open(HTMLCSVfile, 'r') as csvfile:
+        reader = csv.reader(csvfile, delimiter=',')
+        g = []
+        for row in reader:
+            g.append(row)
+        g = np.array(g)
+        g = np.delete(g, np.s_[1:36], axis=1) ## remove column 1-35
+        g = np.transpose(g)
+        HTMLplot_list = g
 
-# SpilitSourceCSV(csvPath)
-    # MergeCSV(csvSplitPath, csvMergePath)
-HTMLplotCSV(csvSplitPath, csvMergePath)
+    print(np.shape(HTMLplot_list))
+
+    with open(HTMLPlotCSV, 'w'):
+        pass  # clean the file
+    with open(HTMLPlotCSV, 'w', newline="") as file:
+        writer = csv.writer(file)
+        for subj_csv in HTMLplot_list:
+            writer.writerow(subj_csv)
+
+# SpilitSourceCSV(csvPath)    ## use for spliting csv file to label_csv files
+# MergeCSV(csvSplitPath, csvMergePath)   ## use for machine learning 
+HTMLplotCSV(csvSplitPath, csvHTMLPath)  ## use for ploting 
