@@ -17,8 +17,8 @@ import csv
 
 csvPath = r'D:\\OverleafProj\\CarotidArteryPlaqueAnalysis\\CarotidArteryData'
 csvSplitPath = r'D:\\OverleafProj\\CarotidArteryPlaqueAnalysis\\CarotidArteryData_SpilitLabels'
-csvMergePath = r'D:\\OverleafProj\\CarotidArteryPlaqueAnalysis\\CarotidArteryData_StandardCSV'
-
+csvMergePath = r'D:\\OverleafProj\\CarotidArteryPlaqueAnalysis\\CarotidArteryData_MergeCSV'
+csvHTMLPath = r'D:\\OverleafProj\\CarotidArteryPlaqueAnalysis\\CarotidArteryData_HTML'
 
 
 dataRow = [ 'Image type',\
@@ -161,5 +161,39 @@ def MergeCSV(sourcePath,  outputPath):
             writeMergefile(sourceFileList,  targetFile)
 
 
+
+def HTMLplotCSV(sourcePath,  outputPath):
+    keys = ['featureID', 'Calcium', 'Fibrous', 'IPH_lipid', 'IPH']
+    csvFiles = [f for f in listdir(sourcePath) if isfile(join(sourcePath, f))]
+
+    for key in keys:
+        if key is 'featureID':
+            targetFile = outputPath + "/" + key + ".csv"
+            for fileName in csvFiles:
+                if key in fileName:
+                    sourceFile = sourcePath + "/" + fileName
+                    shutil.copy(sourceFile, targetFile)  # copy and rename
+
+        # if (key is not 'featureID') and (key is not 'IPH'):
+        #     targetFile = outputPath + "/" + key + ".csv"
+        #     sourceFileList = []
+        #     for fileName in csvFiles:
+        #         if key in fileName:
+        #             sourceFile = sourcePath + "/" + fileName
+        #             sourceFileList.append(sourceFile)
+        #     writeMergefile(sourceFileList,  targetFile)
+
+        # if key is 'IPH':
+        #     targetFile = outputPath + "/" + key + ".csv"
+        #     sourceFileList = []
+        #     for fileName in csvFiles:
+        #         if ('IPH' in fileName) and ('IPH_lipid' not in fileName):
+        #             sourceFile = sourcePath + "/" + fileName
+        #             sourceFileList.append(sourceFile)
+        #     writeMergefile(sourceFileList,  targetFile)
+
+
+
 # SpilitSourceCSV(csvPath)
-# MergeCSV(csvSplitPath, csvMergePath)
+    # MergeCSV(csvSplitPath, csvMergePath)
+HTMLplotCSV(csvSplitPath, csvMergePath)
