@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 
+import glob
+import shutil
 import os
 import math
 import codecs
@@ -13,8 +15,11 @@ from os.path import isfile, join
 import csv
 
 
-csvPath = r'D:\\OverleafProj\\CarotidArteryPlaqueAnalysis\\CarotidArteryData_PIAO'
+csvPath = r'D:\\OverleafProj\\CarotidArteryPlaqueAnalysis\\CarotidArteryData'
 csvSplitPath = r'D:\\OverleafProj\\CarotidArteryPlaqueAnalysis\\CarotidArteryData_SpilitLabels'
+csvMergePath = r'D:\\OverleafProj\\CarotidArteryPlaqueAnalysis\\CarotidArteryData_StandardCSV'
+
+
 
 dataRow = [ 'Image type',\
             'Feature Class',\
@@ -32,10 +37,12 @@ def writeDataToSplitCSV(csvfile, featureID, segmentCalciumList, segmentFibrousLi
     fileName = os.path.basename(csvfile).split('.')[0]
 
     csvList = ['featureID', 'segment_Calcium',
-               'segment_Fibrous', 'segment_IPHlipid', 'segment_IPH']
+               'segment_Fibrous', 'segment_IPH_lipid', 'segment_IPH']
     labelList = [featureID, segmentCalciumList,segmentFibrousList, segmentIPHlipidList, segmentIPHList]
 
     for i in range( len(csvList) ):
+        with open(csvSplitPath + "\\" + fileName + "_" + csvList[i] + ".csv", 'w'):
+            pass  # clean the file
         with open(csvSplitPath +"\\" + fileName + "_" + csvList[i] + ".csv", 'w', newline="") as file:
             writer = csv.writer(file)
             writer.writerow(labelList[i])
@@ -44,7 +51,7 @@ def writeDataToSplitCSV(csvfile, featureID, segmentCalciumList, segmentFibrousLi
 
 
 # read radiomics csv data, reorganize it as a standard format(correct the feature order), and write to split csv files
-def readData(csvPath):
+def SpilitSourceCSV(csvPath):
     csvFiles = [f for f in listdir(csvPath) if isfile(join(csvPath, f))]
 
     for fileName in csvFiles: 
@@ -112,7 +119,47 @@ def readData(csvPath):
             writeDataToSplitCSV(fileName, featureID, segmentCalciumList,
                                 segmentFibrousList, segmentIPHlipidList, segmentIPHList)
 
-readData(csvPath)
 
-# writeDataToSplitCSV('91307196_L',featureID, segmentCalciumList,
-#                     segmentFibrousList, segmentIPHlipidList, segmentIPHList)
+def writeMergefile(sourceFileList,  targetFile):
+    with open(targetFile, 'w'):
+        pass  # clean the file
+    for i in sourceFileList:
+        fr = open(i, 'rb').read()
+        with open(targetFile, 'ab') as f:
+            f.write(fr)
+
+
+def MergeCSV(sourcePath,  outputPath):
+
+    keys = ['featureID', 'Calcium', 'Fibrous', 'IPH_lipid', 'IPH']
+    csvFiles = [f for f in listdir(sourcePath) if isfile(join(sourcePath, f))]
+
+    for key in keys:
+        if key is 'featureID':
+            targetFile = outputPath + "/" + key + ".csv"
+            for fileName in csvFiles:
+                if key in fileName:
+                    sourceFile = sourcePath + "/" + fileName 
+                    shutil.copy(sourceFile, targetFile)  ## copy and rename 
+            
+        if ( key is not 'featureID') and (key is not 'IPH'):
+            targetFile = outputPath + "/" + key + ".csv"
+            sourceFileList = []
+            for fileName in csvFiles:
+                if key in fileName:
+                    sourceFile = sourcePath + "/" + fileName
+                    sourceFileList.append( sourceFile )
+            writeMergefile(sourceFileList,  targetFile)
+
+        if key is 'IPH':
+            targetFile = outputPath + "/" + key + ".csv"
+            sourceFileList = []
+            for fileName in csvFiles:
+                if ('IPH' in fileName) and ('IPH_lipid' not in fileName):
+                    sourceFile = sourcePath + "/" + fileName
+                    sourceFileList.append(sourceFile)
+            writeMergefile(sourceFileList,  targetFile)
+
+
+# SpilitSourceCSV(csvPath)
+# MergeCSV(csvSplitPath, csvMergePath)

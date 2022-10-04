@@ -1,59 +1,24 @@
+<!-- Code from d3-graph-gallery.com -->
 <!DOCTYPE html>
-<html>
+<meta charset="utf-8">
 
-<head>
-    <style>
-        body {
-            background-color: white;
-        }
+<!-- Load d3.js -->
+<h1 class="inGreen">Carotid Artery Plaque Analysis</h1>
+<script src="https://d3js.org/d3.v4.js"></script>
 
-        h1 {
-            color: white;
-            text-align: center;
-        }
-
-        p {
-            font-family: verdana;
-            font-size: 20px;
-        }
-        .inGreen { color: green; }
-
-    </style>
-</head>
-
-<body>
+<!-- Create a div where the graph will take place -->
+<div id="Carotid_Artery"></div>
 
 
-    <h1 class="inGreen">Carotid Artery Plaque Analysis</h1>
-    <script src="https://d3js.org/d3.v4.js"></script>
+<script>
 
-    <div id="CarotidArteryPlot"></div>
-
-    <script>
-
-   // set the dimensions and margins of the graph
+    // set the dimensions and margins of the graph
     var margin = { top: 10, right: 30, bottom: 30, left: 60 },
         width = 460 - margin.left - margin.right,
         height = 400 - margin.top - margin.bottom;
 
-    var sales = [
-        { date: 2009 - 01 - 01, fruit: "Bananas", value: 40 },
-        { date: 2010 - 01 - 01, fruit: "Apples", value: 137 },
-        { date: 2010 - 01 - 01, fruit: "Bananas", value: 58 },
-        { date: 2011 - 01 - 01, fruit: "Apples", value: 166 },
-        { date: 2011 - 01 - 01, fruit: "Bananas", value: 97 },
-        { date: 2012 - 01 - 01, fruit: "Apples", value: 154 },
-        { date: 2012 - 01 - 01, fruit: "Bananas", value: 117 },
-        { date: 2013 - 01 - 01, fruit: "Apples", value: 179 },
-        { date: 2013 - 01 - 01, fruit: "Bananas", value: 98 },
-        { date: 2014 - 01 - 01, fruit: "Apples", value: 187 },
-        { date: 2014 - 01 - 01, fruit: "Bananas", value: 120 },
-        { date: 2015 - 01 - 01, fruit: "Apples", value: 189 },
-        { date: 2015 - 01 - 01, fruit: "Bananas", value: 84 }]
-
-
     // append the svg object to the body of the page
-    var svg = d3.select("#CarotidArteryPlot")
+    var svg = d3.select("#Carotid_Artery")
         .append("svg")
         .attr("width", width + margin.left + margin.right)
         .attr("height", height + margin.top + margin.bottom)
@@ -62,45 +27,51 @@
             "translate(" + margin.left + "," + margin.top + ")");
 
     //Read the data
+    d3.csv("https://raw.githubusercontent.com/holtzy/data_to_viz/master/Example_dataset/5_OneCatSevNumOrdered.csv", function (data) {
 
-    
-    d3.csv("https://raw.githubusercontent.com/ChaoqingXu/CarotidArteryPlaqueAnalysis/main/example.csv?token=GHSAT0AAAAAABZFCP2DKXOOAU2RPJVH3BD4YZ3UO6Q",
-    // When reading the csv, I must format variables:
-    function (d) {
-        return { date: d3.timeParse("%Y-%m-%d")(d.date), value: d.value }
-    },
+        // group the data: I want to draw one line per group
+        var sumstat = d3.nest() // nest function allows to group the calculation per level of a factor
+            .key(function (d) { return d.name; })
+            .entries(data);
 
-    // Now I can use this dataset:
-    function (data) {
         // Add X axis --> it is a date format
-        var x = d3.scaleTime()
-            .domain(d3.extent(data, function (d) { return d.date; }))
+        var x = d3.scaleLinear()
+            .domain(d3.extent(data, function (d) { return d.year; }))
             .range([0, width]);
         svg.append("g")
             .attr("transform", "translate(0," + height + ")")
-            .call(d3.axisBottom(x));
+            .call(d3.axisBottom(x).ticks(5));
 
         // Add Y axis
         var y = d3.scaleLinear()
-            .domain([0, d3.max(data, function (d) { return +d.value; })])
+            .domain([0, d3.max(data, function (d) { return +d.n; })])
             .range([height, 0]);
         svg.append("g")
             .call(d3.axisLeft(y));
 
-        // Add the line
-        svg.append("path")
-            .datum(data)
+        // color palette
+        var res = sumstat.map(function (d) { return d.key }) // list of group names
+        var color = d3.scaleOrdinal()
+            .domain(res)
+            .range(['#e41a1c', '#377eb8', '#4daf4a', '#984ea3', '#ff7f00', '#ffff33', '#a65628', '#f781bf', '#999999'])
+
+        // Draw the line
+        svg.selectAll(".line")
+            .data(sumstat)
+            .enter()
+            .append("path")
             .attr("fill", "none")
-            .attr("stroke", "steelblue")
+            .attr("stroke", function (d) { return color(d.key) })
             .attr("stroke-width", 1.5)
-            .attr("d", d3.line()
-                .x(function (d) { return x(d.date) })
-                .y(function (d) { return y(d.value) })
-            )   
+            .attr("d", function (d) {
+                return d3.line()
+                    .x(function (d) { return x(d.year); })
+                    .y(function (d) { return y(+d.n); })
+                    (d.values)
+            })
+
     })
 
-    </script>
-</body>
+</script>
 
-</html>
-
+ 
