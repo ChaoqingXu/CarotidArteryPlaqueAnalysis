@@ -2,14 +2,114 @@
 <html>
 
 <head>
-    <title>Page Title</title>
+    <style>
+        body {
+            background-color: white;
+        }
+
+        h1 {
+            color: white;
+            text-align: center;
+        }
+
+        p {
+            font-family: verdana;
+            font-size: 20px;
+        }
+        .inGreen { color: green; }
+
+    </style>
 </head>
 
 <body>
 
-    <h1>This is a the first page</h1>
-    <p>This is a paragraph.</p>
 
+    <h1 class="inGreen">Carotid Artery Plaque Analysis</h1>
+    <script src="https://d3js.org/d3.v4.js"></script>
+
+    <div id="CarotidArteryPlot"></div>
+
+    <script>
+
+   // set the dimensions and margins of the graph
+    var margin = { top: 10, right: 30, bottom: 30, left: 60 },
+        width = 460 - margin.left - margin.right,
+        height = 400 - margin.top - margin.bottom;
+
+    var sales = [
+        { date: 2009 - 01 - 01, fruit: "Bananas", value: 40 },
+        { date: 2010 - 01 - 01, fruit: "Apples", value: 137 },
+        { date: 2010 - 01 - 01, fruit: "Bananas", value: 58 },
+        { date: 2011 - 01 - 01, fruit: "Apples", value: 166 },
+        { date: 2011 - 01 - 01, fruit: "Bananas", value: 97 },
+        { date: 2012 - 01 - 01, fruit: "Apples", value: 154 },
+        { date: 2012 - 01 - 01, fruit: "Bananas", value: 117 },
+        { date: 2013 - 01 - 01, fruit: "Apples", value: 179 },
+        { date: 2013 - 01 - 01, fruit: "Bananas", value: 98 },
+        { date: 2014 - 01 - 01, fruit: "Apples", value: 187 },
+        { date: 2014 - 01 - 01, fruit: "Bananas", value: 120 },
+        { date: 2015 - 01 - 01, fruit: "Apples", value: 189 },
+        { date: 2015 - 01 - 01, fruit: "Bananas", value: 84 }]
+
+
+    // append the svg object to the body of the page
+    var svg = d3.select("#CarotidArteryPlot")
+        .append("svg")
+        .attr("width", width + margin.left + margin.right)
+        .attr("height", height + margin.top + margin.bottom)
+        .append("g")
+        .attr("transform",
+            "translate(" + margin.left + "," + margin.top + ")");
+
+    //Read the data
+    // d3.csv("https://raw.githubusercontent.com/holtzy/data_to_viz/master/Example_dataset/3_TwoNumOrdered_comma.csv",
+
+    var f = "D:/OverleafProj/CarotidArteryPlaqueAnalysis/example.csv"
+    d3.csv(f, function (d) {
+        console.log(d);
+    });
+
+    // d3.csv('D:/OverleafProj/CarotidArteryPlaqueAnalysis/example.csv', function (data) {
+    //         console.log(data);
+    //     });
+
+    // d3.csv("testD3",
+    // // When reading the csv, I must format variables:
+    // function (d) {
+    //     return { date: d3.timeParse("%Y-%m-%d")(d.date), value: d.value }
+    // },
+
+    // // Now I can use this dataset:
+    // function (data) {
+    //     // Add X axis --> it is a date format
+    //     var x = d3.scaleTime()
+    //         .domain(d3.extent(data, function (d) { return d.date; }))
+    //         .range([0, width]);
+    //     svg.append("g")
+    //         .attr("transform", "translate(0," + height + ")")
+    //         .call(d3.axisBottom(x));
+
+    //     // Add Y axis
+    //     var y = d3.scaleLinear()
+    //         .domain([0, d3.max(data, function (d) { return +d.value; })])
+    //         .range([height, 0]);
+    //     svg.append("g")
+    //         .call(d3.axisLeft(y));
+
+    //     // Add the line
+    //     svg.append("path")
+    //         .datum(data)
+    //         .attr("fill", "none")
+    //         .attr("stroke", "steelblue")
+    //         .attr("stroke-width", 1.5)
+    //         .attr("d", d3.line()
+    //             .x(function (d) { return x(d.date) })
+    //             .y(function (d) { return y(d.value) })
+    //         )   
+    // })
+
+    </script>
 </body>
 
 </html>
+
