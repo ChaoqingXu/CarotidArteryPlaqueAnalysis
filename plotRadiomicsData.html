@@ -29,26 +29,28 @@
             "translate(" + margin.left + "," + margin.top + ")");
 
     //Read the data
-    d3.csv("https://raw.githubusercontent.com/ChaoqingXu/CarotidArteryPlaqueAnalysis/main/CarotidArteryData_HTML/HTMLPlotCSV.csv?token=GHSAT0AAAAAABZFCP2DCYOV7SFJLF2ZIQO6YZ5COHQ", function (data) {
+    // d3.csv("https://raw.githubusercontent.com/holtzy/D3-graph-gallery/master/DATA/data_connectedscatter.csv", function (data) {
+    d3.csv("https://raw.githubusercontent.com/ChaoqingXu/CarotidArteryPlaqueAnalysis/main/CarotidArteryData_HTML/HTMLPlotCSV.csv?token=GHSAT0AAAAAABZFCP2CHDNUFXU6CW7CCQZYYZ5EPFA", function (data) {
 
-        width_value = 1  // x-axis 
-        height_value = 0.6  // since y-values are normalized
+        // console.log(data.)
+
+        width_value = 400  // x-axis 
+        height_value = 20 // since y-values are normalized
 
         var subject_ID_labels = data.columns
         Indexlist = subject_ID_labels.shift() // remove the first column and store it in Indexlist
-
 
         // Reformat the data: we need an array of arrays of {x, y} tuples
         var dataReady = subject_ID_labels.map(function (grpName) { // .map allows to do something for each element of the list
             return {
                 name: grpName,
                 values: data.map(function (d) {
-                    return { time: d.subject_label, value: +d[grpName] };
+                    return { subject_label: d.subject_label, value: +d[grpName] };
                 })
             };
         });
         // I strongly advise to have a look to dataReady with
-        // console.log(dataReady)
+        console.log(dataReady)
 
         // A color scale: one color for each group
         var myColor = d3.scaleOrdinal()
@@ -98,7 +100,7 @@
             .append("circle")
             .attr("cx", function (d) { return x(d.subject_label) })
             .attr("cy", function (d) { return y(d.value) })
-            .attr("r", 2)
+            .attr("r", 3)
             .attr("stroke", "white")
 
         // Add a legend at the end of each line
@@ -109,11 +111,11 @@
             .append('g')
             .append("text")
             .datum(function (d) { return { name: d.name, value: d.values[d.values.length - 1] }; }) // keep only the last value of each time series
-            .attr("transform", function (d) { return "translate(" + x(d.value.time) + "," + y(d.value.value) + ")"; }) // Put the text at the position of the last point
+            .attr("transform", function (d) { return "translate(" + x(d.value.subject_label) + "," + y(d.value.value) + ")"; }) // Put the text at the position of the last point
             .attr("x", 12) // shift the text a bit more right
             .text(function (d) { return d.name; })
             .style("fill", function (d) { return myColor(d.name) })
-            .style("font-size", 15)
+            .style("font-size", 10)
 
     })
 
