@@ -29,10 +29,10 @@
             "translate(" + margin.left + "," + margin.top + ")");
 
     //Read the data
-    d3.csv("https://github.com/ChaoqingXu/CarotidArteryPlaqueAnalysis/blob/main/CarotidArteryData_HTML/HTMLPlotCSV.csv", function (data) {
+    d3.csv("https://raw.githubusercontent.com/ChaoqingXu/CarotidArteryPlaqueAnalysis/main/CarotidArteryData_HTML/HTMLPlotCSV.csv?token=GHSAT0AAAAAABZFCP2DCYOV7SFJLF2ZIQO6YZ5COHQ", function (data) {
 
         width_value = data.length  // x-axis 
-        height_value = 20  // since y-values are normalized
+        height_value = 1  // since y-values are normalized
 
         var subject_ID_labels = data.columns
         Indexlist = subject_ID_labels.shift() // remove the first column and store it in Indexlist
