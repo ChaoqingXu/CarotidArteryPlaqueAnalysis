@@ -3,7 +3,6 @@
 <meta charset="utf-8">
 
 <!-- Load d3.js -->
-<h1 class="inGreen">Carotid Artery Plaque Analysis</h1>
 <script src="https://d3js.org/d3.v4.js"></script>
 
 <!-- Create a div where the graph will take place -->
@@ -16,7 +15,7 @@
 <script>
 
     // set the dimensions and margins of the graph
-    var margin = { top: 10, right: 10, bottom: 30, left: 30 },
+    var margin = { top: 10, right: 100, bottom: 30, left: 30 },
         width = 460 - margin.left - margin.right,
         height = 400 - margin.top - margin.bottom;
 
@@ -32,11 +31,15 @@
     //Read the data
     d3.csv("https://raw.githubusercontent.com/holtzy/D3-graph-gallery/master/DATA/data_connectedscatter.csv", function (data) {
 
-        // List of groups (here I have one group per column)
-        var allGroup = ["valueA", "valueB", "valueC"]
+        width_value = data.length  // x-axis 
+        height_value = 20  // since y-values are normalized
+
+        var subject_labels = data.columns
+        Indexlist = subject_labels.shift() // remove the first column and store it in Indexlist
+
 
         // Reformat the data: we need an array of arrays of {x, y} tuples
-        var dataReady = allGroup.map(function (grpName) { // .map allows to do something for each element of the list
+        var dataReady = subject_labels.map(function (grpName) { // .map allows to do something for each element of the list
             return {
                 name: grpName,
                 values: data.map(function (d) {
@@ -49,12 +52,12 @@
 
         // A color scale: one color for each group
         var myColor = d3.scaleOrdinal()
-            .domain(allGroup)
+            .domain(subject_labels)
             .range(d3.schemeSet2);
 
         // Add X axis --> it is a date format
         var x = d3.scaleLinear()
-            .domain([0, 10])
+            .domain([0, width_value])
             .range([0, width]);
         svg.append("g")
             .attr("transform", "translate(0," + height + ")")
@@ -62,7 +65,7 @@
 
         // Add Y axis
         var y = d3.scaleLinear()
-            .domain([0, 20])
+            .domain([0, height_value])
             .range([height, 0]);
         svg.append("g")
             .call(d3.axisLeft(y));
@@ -75,10 +78,9 @@
             .data(dataReady)
             .enter()
             .append("path")
-            .attr("class", function (d) { return d.name })
             .attr("d", function (d) { return line(d.values) })
             .attr("stroke", function (d) { return myColor(d.name) })
-            .style("stroke-width", 4)
+            .style("stroke-width", 2)
             .style("fill", "none")
 
         // Add the points
@@ -89,7 +91,6 @@
             .enter()
             .append('g')
             .style("fill", function (d) { return myColor(d.name) })
-            .attr("class", function (d) { return d.name })
             // Second we need to enter in the 'values' part of this group
             .selectAll("myPoints")
             .data(function (d) { return d.values })
@@ -97,17 +98,16 @@
             .append("circle")
             .attr("cx", function (d) { return x(d.time) })
             .attr("cy", function (d) { return y(d.value) })
-            .attr("r", 5)
+            .attr("r", 2)
             .attr("stroke", "white")
 
-        // Add a label at the end of each line
+        // Add a legend at the end of each line
         svg
             .selectAll("myLabels")
             .data(dataReady)
             .enter()
             .append('g')
             .append("text")
-            .attr("class", function (d) { return d.name })
             .datum(function (d) { return { name: d.name, value: d.values[d.values.length - 1] }; }) // keep only the last value of each time series
             .attr("transform", function (d) { return "translate(" + x(d.value.time) + "," + y(d.value.value) + ")"; }) // Put the text at the position of the last point
             .attr("x", 12) // shift the text a bit more right
@@ -115,25 +115,6 @@
             .style("fill", function (d) { return myColor(d.name) })
             .style("font-size", 15)
 
-        // Add a legend (interactive)
-        svg
-            .selectAll("myLegend")
-            .data(dataReady)
-            .enter()
-            .append('g')
-            .append("text")
-            .attr('x', function (d, i) { return 30 + i * 60 })
-            .attr('y', 30)
-            .text(function (d) { return d.name; })
-            .style("fill", function (d) { return myColor(d.name) })
-            .style("font-size", 15)
-            .on("click", function (d) {
-                // is the element currently visible ?
-                currentOpacity = d3.selectAll("." + d.name).style("opacity")
-                // Change the opacity: from 0 to 1 or from 1 to 0
-                d3.selectAll("." + d.name).transition().style("opacity", currentOpacity == 1 ? 0 : 1)
-
-            })
     })
 
 

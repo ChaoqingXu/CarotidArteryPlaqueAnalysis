@@ -275,7 +275,6 @@ def HTMLplotCSV(sourcePath,  outputPath):
     tmpplot_list = np.delete(tmpplot_list, 0, axis=0)
     tmpplot_normed = normalize(tmpplot_list, axis=1, norm='l1')     # normalize matrix by row    
     HTMLplot_list[1:row_num, 1:column_num] = tmpplot_normed
-    print(np.shape(HTMLplot_list))
 
     ## write to csv file
     with open(htmlplotcsv, 'w'):
