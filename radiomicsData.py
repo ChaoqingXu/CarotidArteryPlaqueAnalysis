@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+from sklearn.preprocessing import normalize
 import glob
 import shutil
 import os
@@ -249,6 +250,7 @@ def HTMLplotCSV(sourcePath,  outputPath):
 
     print(np.shape(HTMLplot_list))
 
+
     ## replace the first column with index
     subj_label_index_list = []
     subj_label_list = HTMLplot_list[:, 0]
@@ -258,12 +260,22 @@ def HTMLplotCSV(sourcePath,  outputPath):
         else:
             subj_label_index_list.append( i )
 
+    ## dictionary: featureLabel and index 
     label_keys = HTMLplot_list[:, 0]
     label_index = subj_label_index_list
     label_dictionary = dict(zip(label_keys, label_index))
 
     HTMLplot_list[:, 0] = subj_label_index_list
 
+
+    ## get submatrix from the HTMLplot_list, and normalize it 
+    row_num = len(HTMLplot_list)
+    column_num = len(HTMLplot_list[0])
+    tmpplot_list = np.delete(HTMLplot_list, 0, axis=1)
+    tmpplot_list = np.delete(tmpplot_list, 0, axis=0)
+    tmpplot_normed = normalize(tmpplot_list, axis=1, norm='l1')     # normalize matrix by row    
+    HTMLplot_list[1:row_num, 1:column_num] = tmpplot_normed
+    print(np.shape(HTMLplot_list))
 
     ## write to csv file
     with open(htmlplotcsv, 'w'):
