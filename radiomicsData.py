@@ -177,7 +177,7 @@ def HTMLplotCSV(sourcePath,  outputPath):
     keys = ['featureID', 'Calcium', 'Fibrous', 'IPH_lipid', 'IPH']
     csvFiles = [f for f in listdir(sourcePath) if isfile(join(sourcePath, f))]
     HTMLCSVfile = outputPath + "/HTMLCSVfile.csv"
-    HTMLPlotCSV = outputPath + "/HTMLPlotCSV.csv"
+    htmlplotcsv = outputPath + "/htmlplotcsv.csv"
 
     for key in keys:
         if key is 'featureID':
@@ -249,9 +249,26 @@ def HTMLplotCSV(sourcePath,  outputPath):
 
     print(np.shape(HTMLplot_list))
 
-    with open(HTMLPlotCSV, 'w'):
+    ## replace the first column with index
+    subj_label_index_list = []
+    subj_label_list = HTMLplot_list[:, 0]
+    for i in range(len(subj_label_list) ):
+        if i == 0:
+            subj_label_index_list.append( subj_label_list[i] )
+        else:
+            subj_label_index_list.append( i )
+
+    label_keys = HTMLplot_list[:, 0]
+    label_index = subj_label_index_list
+    label_dictionary = dict(zip(label_keys, label_index))
+
+    HTMLplot_list[:, 0] = subj_label_index_list
+
+
+    ## write to csv file
+    with open(htmlplotcsv, 'w'):
         pass  # clean the file
-    with open(HTMLPlotCSV, 'w', newline="") as file:
+    with open(htmlplotcsv, 'w', newline="") as file:
         writer = csv.writer(file)
         for subj_csv in HTMLplot_list:
             writer.writerow(subj_csv)
