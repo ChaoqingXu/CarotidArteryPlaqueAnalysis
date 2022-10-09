@@ -15,7 +15,7 @@
 
     //Read the data
     // d3.csv("https://raw.githubusercontent.com/holtzy/D3-graph-gallery/master/DATA/data_connectedscatter.csv", function (data) {
-d3.csv("https://raw.githubusercontent.com/ChaoqingXu/CarotidArteryPlaqueAnalysis/main/CarotidArteryData_HTML/HTMLPlotCSV.csv", function (data) {
+    d3.csv("https://raw.githubusercontent.com/ChaoqingXu/CarotidArteryPlaqueAnalysis/main/CarotidArteryData_HTML/HTMLPlotCSV.csv", function (data) {
 
         width_value = 400  // x-axis 
         height_value = 1 // since y-values are normalized
@@ -34,7 +34,7 @@ d3.csv("https://raw.githubusercontent.com/ChaoqingXu/CarotidArteryPlaqueAnalysis
             };
         });
         // I strongly advise to have a look to dataReady with
-        // console.log(dataReady)
+        console.log(dataReady)
 
         // match subject labels categories, based on subject_ID_labels last string
         var labels = ['Calcium', 'Fibrous', 'IPH_lipid', 'IPH']
