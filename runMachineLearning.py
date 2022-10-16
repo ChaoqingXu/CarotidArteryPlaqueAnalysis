@@ -40,8 +40,9 @@ if platform.system() == 'Windows':
 
 dirpath = os.getcwd()
 csvHTMLPath = dirpath + "/CarotidArteryData_HTML"
-
 HTMLCSVfile = csvHTMLPath + "/HTMLCSVfile.csv"
+
+outputPath = dirpath + "/Output"
 
 def readHTMLCSVfile(HTMLCSVfile):
     ## read integrated CSV file "HTMLCSVfile.csv", then transpose and delete unuseful collumns.
@@ -96,102 +97,108 @@ def readHTMLCSVfile(HTMLCSVfile):
     
     return HTMLplot_list, label_dictionary, subject_Category_List
 
+ 
+def plotROCcurve(y_test, y_score, n_classes, plaque_list, color_list, _path):
+
+    # Compute ROC curve and ROC area for each class
+    fpr = dict()
+    tpr = dict()
+    roc_auc = dict()
+    for i in range(n_classes):
+        fpr[i], tpr[i], _ = roc_curve(y_test[:, i], y_score[:, i])
+        roc_auc[i] = auc(fpr[i], tpr[i])
+
+    # First aggregate all false positive rates
+    all_fpr = np.unique(np.concatenate([fpr[i] for i in range(n_classes)]))
+
+    # Then interpolate all ROC curves at this points
+    mean_tpr = np.zeros_like(all_fpr)
+    for i in range(n_classes):
+        mean_tpr += np.interp(all_fpr, fpr[i], tpr[i])
+
+    # Finally average it and compute AUC
+    mean_tpr /= n_classes
+
+    fpr["macro"] = all_fpr
+    tpr["macro"] = mean_tpr
+    roc_auc["macro"] = auc(fpr["macro"], tpr["macro"])
+
+    # Plot all ROC curves
+
+    plt.plot(
+        fpr["macro"],
+        tpr["macro"],
+        label="macro-average ROC curve (area = {0:0.2f})".format(
+            roc_auc["macro"]),
+        color="deeppink",
+        linestyle="-",
+        linewidth=2,
+    )
+
+    colors = cycle(color_list)
+    for i, color in zip(range(n_classes), colors):
+        plt.plot(
+            fpr[i],
+            tpr[i],
+            color=color,
+            linewidth=2,
+            linestyle=":",
+            label="ROC curve of " +
+            str(plaque_list[i]) + " (area = {1:0.2f})".format(i, roc_auc[i]),
+        )
+
+    plt.plot([0, 1], [0, 1], "k--", linewidth=2)
+    plt.xlim([0.0, 1.0])
+    plt.ylim([0.0, 1.05])
+    plt.xlabel("False Positive Rate")
+    plt.ylabel("True Positive Rate")
+    plt.title("Plaque ROC curve")
+    plt.legend(loc="lower right", prop={'size': 9})
+    plt.savefig(_path + "/" + "plaque" + '_' +
+                "OnevsAll" + '_' + "ROC_Curve" + '.png')
+    plt.show()
 
 
-HTMLplot_list, label_dictionary, subject_Category_List = readHTMLCSVfile(HTMLCSVfile)
-nsample, dim = np.shape(HTMLplot_list)
-plaque_Assignment = mat(zeros((nsample, 2)))
+def multiClass_Classification(HTMLCSVfile, outputPath):
+    HTMLplot_list, label_dictionary, subject_Category_List = readHTMLCSVfile(HTMLCSVfile)
+    nsample, dim = np.shape(HTMLplot_list)
+    plaque_Assignment = mat(zeros((nsample, 2)))
 
-X = []
-for i in range( nsample ):
-    tmp = []
-    for j in range( dim ):
-        tmp.append(np.float64(HTMLplot_list[i][j]))
-    X.append(tmp)
+    X = []
+    for i in range(nsample):
+        tmp = []
+        for j in range(dim):
+            tmp.append(np.float64(HTMLplot_list[i][j]))
+        X.append(tmp)
 
-y = []
-for i in range(len(subject_Category_List)):
-    if subject_Category_List[i].endswith('Calcium'):
-        plaque_Assignment[i,:] = 0, 1
-        y.append(0)
-    if subject_Category_List[i].endswith('Fibrous'):
-        plaque_Assignment[i, :] = 1, 1
-        y.append(1)
-    if subject_Category_List[i].endswith('IPH_lipid'):
-        plaque_Assignment[i, :] = 2, 1
-        y.append(2)
-    if subject_Category_List[i].endswith('IPH'):
-        plaque_Assignment[i, :] = 3, 1
-        y.append(3)
+    y = []
+    for i in range(len(subject_Category_List)):
+        if subject_Category_List[i].endswith('Calcium'):
+            plaque_Assignment[i, :] = 0, 1
+            y.append(0)
+        if subject_Category_List[i].endswith('Fibrous'):
+            plaque_Assignment[i, :] = 1, 1
+            y.append(1)
+        if subject_Category_List[i].endswith('IPH_lipid'):
+            plaque_Assignment[i, :] = 2, 1
+            y.append(2)
+        if subject_Category_List[i].endswith('IPH'):
+            plaque_Assignment[i, :] = 3, 1
+            y.append(3)
 
-# print(plaque_Assignment) 
-print(y)
+    # # # shuffle and split training and test sets
+    y = label_binarize(y, classes=[0, 1, 2, 3])
+    n_classes = y.shape[1]
 
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.33, random_state=0)
+    clf = OneVsRestClassifier( LinearSVC(random_state=0, dual=True, max_iter=100000) )
 
-# # # shuffle and split training and test sets
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.33, random_state=0)
-clf = OneVsRestClassifier( LinearSVC(random_state=0, dual=True, max_iter=100000) )
+    y_score = clf.fit(X_train, y_train).decision_function(X_test)
 
-y_score = clf.fit(X_train, y_train).decision_function(X_test)
+    plaque_list = ['Calcium', 'Fibrous', 'IPH_lipid', 'IPH']
+    color_list = ['royalblue', 'firebrick', 'darkgrey', 'green']
 
-
-# n_classes = 4
-# # Compute ROC curve and ROC area for each class
-# fpr = dict()
-# tpr = dict()
-# roc_auc = dict()
-# for i in range(n_classes):
-#     fpr[i], tpr[i], _ = roc_curve(y_test[:, i], y_score[:, i])
-#     roc_auc[i] = auc(fpr[i], tpr[i])
-
-# # Compute micro-average ROC curve and ROC area
-# fpr["micro"], tpr["micro"], _ = roc_curve(y_test.ravel(), y_score.ravel())
-# roc_auc["micro"] = auc(fpr["micro"], tpr["micro"])
-
-# plt.figure()
-# lw = 2
-# plt.plot(
-#     fpr[2],
-#     tpr[2],
-#     color="darkorange",
-#     lw=lw,
-#     label="ROC curve (area = %0.2f)" % roc_auc[2],
-# )
-# plt.plot([0, 1], [0, 1], color="navy", lw=lw, linestyle="--")
-# plt.xlim([0.0, 1.0])
-# plt.ylim([0.0, 1.05])
-# plt.xlabel("False Positive Rate")
-# plt.ylabel("True Positive Rate")
-# plt.title("Receiver operating characteristic example")
-# plt.legend(loc="lower right")
-# plt.show()
+    plotROCcurve(y_test, y_score, n_classes, plaque_list, color_list, outputPath)
 
 
-
-# # show clusters under DR
-# n_classes = len(AromaToLabel)
-# p = clf.fit(X_train, y_train).predict(X)
-# print("p = " + str( p ) )
-# print ("len(p) = " + str(len(p ) ) )
-# showMLclusters(X, p, n_classes)
-
-
-# # #-------------------------------------------------------------------#
-# # Binarize the output
-
-# y = label_binarize(y, classes=[0, 1, 2])
-# n_classes = 3
-
-# # shuffle and split training and test sets
-# X_train, X_test, y_train, y_test = train_test_split(
-#     X, y, test_size=0.33, random_state=0)
-
-# # classifier
-# clf = OneVsRestClassifier(
-#     LinearSVC(random_state=0, dual=True, max_iter=100000))
-# y_score = clf.fit(X_train, y_train).decision_function(X_test)
-
-# print( "yscore = " + str(np.shape(y_score)) + "  " + str(y_score[0]) )
-# print("y_test = " + str(np.shape(y_test)) + "  " + str(y_test[0]))
-
-# plotROCcurve(y_test, y_score)
+multiClass_Classification(HTMLCSVfile, outputPath)
