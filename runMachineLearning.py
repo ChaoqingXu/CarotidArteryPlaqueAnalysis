@@ -55,7 +55,7 @@ def readHTMLCSVfile(HTMLCSVfile):
         g = np.delete(g, np.s_[1:36], axis=1)  # remove column 1-35
         g = np.transpose(g)
         HTMLplot_list = g
-        
+
     ## replace the first column with index
     subj_label_index_list = []
     subj_label_list = HTMLplot_list[:, 0]
@@ -81,51 +81,49 @@ def readHTMLCSVfile(HTMLCSVfile):
     tmpplot_normed = normalize(tmpplot_list, axis=1, norm='l1')
     HTMLplot_list[1:row_num, 1:column_num] = tmpplot_normed
 
-    return HTMLplot_list, label_dictionary
+    ## remove the first row and column of "htmlplotcsv.csv" file and transpose it
+    HTMLplot_list = HTMLplot_list.transpose()
+
+    subject_Category_List = []
+    for item in HTMLplot_list[:, 0]:
+        if item == "subject_label": pass
+        else:
+            subject_Category_List.append(item)
+
+    HTMLplot_list = np.delete(HTMLplot_list, 0, axis=1)
+    HTMLplot_list = np.delete(HTMLplot_list, 0, axis=0)
+    label_dictionary.pop("subject_label")
+    
+    return HTMLplot_list, label_dictionary, subject_Category_List
 
 
-HTMLplot_list, label_dictionary = readHTMLCSVfile(HTMLCSVfile)
-HTMLplot_list = HTMLplot_list.transpose()
-numSamples, dim = HTMLplot_list.shape
 
-print(numSamples)
-print(dim)
+HTMLplot_list, label_dictionary, subject_Category_List = readHTMLCSVfile(HTMLCSVfile)
+nsample, dim = np.shape(HTMLplot_list)
+plaque_Assignment = mat(zeros((nsample, 2)))
+y_plaque = []
 
-#    aromaClusterAssignment = mat(zeros((numSamples, 2)))
+for i in range(len(subject_Category_List)):
+    if subject_Category_List[i].endswith('Calcium'):
+        plaque_Assignment[i,:] = 0, 1
+        y_plaque.append(0)
+    if subject_Category_List[i].endswith('Fibrous'):
+        plaque_Assignment[i, :] = 1, 1
+        y_plaque.append(1)
+    if subject_Category_List[i].endswith('IPH_lipid'):
+        plaque_Assignment[i, :] = 2, 1
+        y_plaque.append(2)
+    if subject_Category_List[i].endswith('IPH'):
+        plaque_Assignment[i, :] = 3, 1
+        y_plaque.append(3)
 
-#    for i in range(numSamples):
-#        if regionList[i] in RegionAbbreviationToLabel.keys():
-#             regionClusterAssignment[i, :] = float(
-#                RegionAbbreviationToLabel.get(regionList[i]) - 1), 1
-#         if str(partList[i]) in PartToLabel.keys():
-#             partClusterAssignment[i, :] = float(PartToLabel.get(partList[i]) - 1), 1
-#         if aromaList[i] in AromaToLabel.keys():
-#             aromaClusterAssignment[i, :] =  float(AromaToLabel.get(aromaList[i]) - 1), 1
+print(plaque_Assignment) 
+print(y_plaque)
 
-# X, regionClusterAssignment, regionClusters, partClusterAssignment, partClusters, aromaClusterAssignment, aromaClusters = loadFileListFeatures(
-#     fileList)
-
-# y = []
-# aromaList = np.array( aromaClusterAssignment[:, 0] )
-# for i in range( len( aromaList )):
-#     tmp = aromaList[ i ][0]
-#     y.append( tmp )
-
-# X = normalize(X, axis=0, norm='max')
-
-# print("X = " + str( np.shape(X) ))
-# print( "X[0] = " + str(X[0]))
-# print("y = " + str(np.shape(y)) )
-# print( y )
-
-
-# # #-------------------------------------------------------------------#
-# #https://stackoverflow.com/questions/52670012/convergencewarning-liblinear-failed-to-converge-increase-the-number-of-iterati
-# #It might even indicate that you have some in appropriate features or strong correlations in the features. Debug those first before taking this easy way out.
 
 # # shuffle and split training and test sets
-# X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.33, random_state=0)
-# clf = OneVsRestClassifier( LinearSVC(random_state=0, dual=True, max_iter=100000) )
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.33, random_state=0)
+clf = OneVsRestClassifier( LinearSVC(random_state=0, dual=True, max_iter=100000) )
 
 # # show clusters under DR
 # n_classes = len(AromaToLabel)
