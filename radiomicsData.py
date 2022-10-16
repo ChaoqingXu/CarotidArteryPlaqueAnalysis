@@ -286,4 +286,4 @@ def HTMLplotCSV(sourcePath,  outputPath):
 
 # SpilitSourceCSV(csvPath)    ## use for spliting csv file to label_csv files
 # MergeCSV(csvSplitPath, csvMergePath)   ## use for machine learning 
-HTMLplotCSV(csvSplitPath, csvHTMLPath)  ## use for ploting 
+# HTMLplotCSV(csvSplitPath, csvHTMLPath)  ## use for ploting 
