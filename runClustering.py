@@ -9,7 +9,7 @@ import numpy as np
 import subprocess
 from time import process_time
 from vectors import Point, Vector
-
+import math
 
 from numpy import *
 import matplotlib.pyplot as plt
@@ -23,16 +23,17 @@ from multiprocessing import Pool
 from functools import partial 
 from time import process_time
 
-from TobaccoData import *
-
-from globvar import *
 from sklearnCluster import *
-from autoEncoder import *
+from runMachineLearning import *
 
 
 if platform.system() == 'Windows':
     sys.path.append(
-        "D:\OverleafProj\TobaccoProj_DeepClustering")
+        "D:\OverleafProj\CarotidArteryPlaqueAnalysis")
+
+dirpath = os.getcwd()
+outputPath = dirpath + "/Output"
+
 
 
 def euclDistance(vector1, vector2):
@@ -150,13 +151,19 @@ def kmeans(dataSet, k ):
 # show your cluster only available with 2-D data
 def showCluster(destPath, inputFileName, dataSet, clusterMethod, clusterNum, clusterAssment):
 
-    ns, nx= dataSet.shape
-    d2_train_dataset = dataSet.reshape((ns,nx))
+    ns, nd = dataSet.shape
+    X = []
+    for i in range(ns):
+        tmp = []
+        for j in range(nd):
+            tmp.append(np.float64(HTMLplot_list[i][j]))
+        X.append(tmp)
+
+    d2_train_dataset = np.array(X).reshape((ns,nd))
     pca = PCA( n_components=2 )
     dataSet = pca.fit(d2_train_dataset).transform(d2_train_dataset)
-
     numSamples, dim = dataSet.shape
-    
+
     if dim != 2:
         print("Sorry! I can not draw because the dimension of your data is not 2!")
         return 1
@@ -196,12 +203,10 @@ def showCluster(destPath, inputFileName, dataSet, clusterMethod, clusterNum, clu
     plt.show()
 
 
-def TobaccoClustering(destPath, dataSet, inputFileName, clusterMethod, clusteringResultFile):
+def CarotidArteryClustering(destPath, dataSet, inputFileName, clusterMethod, clusteringResultFile, kValue):
   
     print("step 2: clustering...")
     dataSet = mat(dataSet)
-
-    t_cluster_start = process_time()   
 
     if clusterMethod == "kmeans":
         centroidsIndex, centroids, clusterAssment  = useKmeansPlusPlusClustering( dataSet, kValue )
@@ -213,13 +218,6 @@ def TobaccoClustering(destPath, dataSet, inputFileName, clusterMethod, clusterin
         centroidsIndex, centroids, clusterAssment = useAgglomerativeClustering(dataSet, kValue)
     if clusterMethod == "DBSCAN":
         centroidsIndex, centroids, clusterAssment = useAgglomerativeClustering(dataSet, kValue)
-
-    t_cluster_end = process_time()    
-
-
-    print( "---> Time:  Clustering time = " + str( t_cluster_end - t_cluster_start ) )
-    with codecs.open(destPath + "/" + inputFileName + "_calTime.txt", "a", "utf-8") as wt:
-        wt.write( "Time: Clustering time = " + str( t_cluster_end - t_cluster_start ) + "\n")
 
 
     # print( "write to a clusterAssment file " )
@@ -239,67 +237,17 @@ def TobaccoClustering(destPath, dataSet, inputFileName, clusterMethod, clusterin
 
 
         
-## clusterMethod = int( sys.argv[1] )
-## kValue = int( sys.argv[2] )
+# clusterMethod = int( sys.argv[1] )
+# kValue = int( sys.argv[2] )
 
 if __name__ == '__main__':
    
     print("start clustering")
 
-    runStart = process_time()
+    clusterMethod = "kmeans"
+    kValue = 3
 
-
-    if loadFileList: 
-
-        inputFileName = "MergeFiles"
-        with open(destPath + "/" + inputFileName + "_calTime.txt", 'w'):
-            pass  # clean the file
-        with codecs.open(destPath + "/" + inputFileName + "_calTime.txt", "a", "utf-8") as wt:
-            wt.write("Time Calculations: " + "\n")
-
-        dataSet, regionClusterAssignment, regionClusters, partClusterAssignment, partClusters, aromaClusterAssignment, aromaClusters = loadFileListFeatures(fileList)
-        # normaize each column
-        dataSet = normalize(dataSet, axis=0, norm='max')
-
-        showCluster(destPath, inputFileName, dataSet,"regionClusters", regionClusters, regionClusterAssignment)
-        showCluster(destPath, inputFileName, dataSet,"partCluster", partClusters, partClusterAssignment)
-        showCluster(destPath, inputFileName, dataSet,"aromaCluster", aromaClusters, aromaClusterAssignment)
-        
-    else: 
-
-        inputFileName = getFileName(sourPath,  inputFile)
-
-        with open(destPath + "/" + inputFileName + "_calTime.txt", 'w'):
-            pass  # clean the file
-        with codecs.open(destPath + "/" + inputFileName + "_calTime.txt", "a", "utf-8") as wt:
-            wt.write("Time Calculations: " + "\n")
-
-        ## check featureFile exist or not
-        featureFile = Path(destPath + "/" + inputFileName + "_Feature.txt")
-        if featureFile.is_file():  # file exists
-            print("feature file is exist, loading features")
-            dataSet = loadFeature(featureFile)
-            dataSet = normalize(dataSet, axis=0, norm='max') # normaize each column
-            print (dataSet[0])
-        else:
-            print("featureFile is not exist, computing  features")
-            if inputFile == NIRFile: 
-                NIR_feature, weaveLength_list = readNIRfile(
-                    inputFile)
-                dataSet = NIR_feature
-            if inputFile == BasicFile:
-                BasicInfo_feature, regionClusterAssignment, regionClusters, partClusterAssignment, partClusters, aromaClusterAssignment, aromaClusters = readBasicInfofile( inputFile)
-                dataSet = BasicInfo_feature
-                # normaize each column
-                dataSet = normalize(dataSet, axis=0, norm='max')
-                showCluster(destPath, inputFileName, dataSet,"regionClusters", regionClusters, regionClusterAssignment)
-                showCluster(destPath, inputFileName, dataSet,"partCluster", partClusters, partClusterAssignment)
-                showCluster(destPath, inputFileName, dataSet,"aromaCluster", aromaClusters, aromaClusterAssignment)
-            if inputFile == DPFile:
-                DP_feature = readDPfile(inputFile)
-                dataSet = DP_feature
-            dataSet = normalize(dataSet, axis=0, norm='max') # normaize each column
-            print(dataSet[0])
+    HTMLplot_list, label_dictionary, subject_Category_List = readHTMLCSVfile(HTMLCSVfile)
 
     if clusterMethod == "kmeans":
        clusteringResultFile = "KmeansClusteringResult"
@@ -312,12 +260,9 @@ if __name__ == '__main__':
     if clusterMethod == "DBSCAN":
        clusteringResultFile = "DBSCANClusteringResult"
 
-    TobaccoClustering(destPath, dataSet, inputFileName,clusterMethod, clusteringResultFile)
+    CarotidArteryClustering(outputPath, HTMLplot_list, "CarotidArtery",
+                            clusterMethod, clusteringResultFile, kValue)
 
-    runEnd = process_time()
-    print("---> Time:  Total time = " + str(runEnd - runStart))
-    with codecs.open(destPath + "/" + inputFileName + "_calTime.txt", "a", "utf-8") as wt:
-        wt.write("Time: Total time = " + str(runEnd - runStart) + "\n")
 
 
 

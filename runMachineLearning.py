@@ -201,4 +201,4 @@ def multiClass_Classification(HTMLCSVfile, outputPath):
     plotROCcurve(y_test, y_score, n_classes, plaque_list, color_list, outputPath)
 
 
-multiClass_Classification(HTMLCSVfile, outputPath)
+# multiClass_Classification(HTMLCSVfile, outputPath)
