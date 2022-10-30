@@ -1,3 +1,6 @@
+from sklearn.feature_selection import RFECV
+from sklearn.ensemble import ExtraTreesClassifier
+from sklearn.ensemble import RandomForestClassifier, AdaBoostClassifier
 import sys
 import os
 import csv
@@ -32,6 +35,7 @@ from itertools import cycle
 from sklearn.decomposition import PCA
 
 from radiomicsData import*
+
 
 
 if platform.system() == 'Windows':
@@ -97,7 +101,46 @@ def readHTMLCSVfile(HTMLCSVfile):
     
     return HTMLplot_list, label_dictionary, subject_Category_List
 
- 
+
+def getTopKFeatureIndices(scores, nSelect):
+    nf = min(nSelect, len(scores))
+    return np.argsort(scores)[:nf]
+
+
+def getExtraTreeScores(X, y, nFeat):
+    # n_estimators = 150, min_samples_split = 4, max_features = nFeat, n_jobs = 4, random_state = int(round(time.time())) )
+    forest = ExtraTreesClassifier(
+        n_estimators=100, min_samples_split=4, max_features='sqrt', n_jobs=4)
+    forest.fit(X, y)
+    importances = forest.feature_importances_
+    return -importances
+
+
+def getRFScores(X, y, nFeat):
+    forest = RandomForestClassifier(n_estimators=1500, min_samples_split=4,
+                                    max_features=nFeat, n_jobs=4, random_state=int(round(time.time())))
+    forest.fit(X, y)
+    importances = forest.feature_importances_
+    return -importances
+
+    return pValues
+    
+
+def getLVMScores(X, y, nFeat):
+    clfF = SVC(kernel="linear", C=0.2, probability=True,
+               max_iter=1000000, tol=1e-10)
+    clfF.fit(X, y)
+    importances = np.abs(clfF.coef_[0])
+    return -importances
+    
+def getFeatureScores( X, y, FeatureScoringMethod, nFeat ):
+    if FeatureScoringMethod == "Extra Trees":
+        return getExtraTreeScores( X, y, nFeat ) 
+    elif FeatureScoringMethod == "Random Forest":
+    	return getRFScores( X, y, nFeat )
+    else:
+    	return getLVMScores( X, y, nFeat ) #SVM
+
 def plotROCcurve(y_test, y_score, n_classes, plaque_list, color_list, _path):
 
     # Compute ROC curve and ROC area for each class
@@ -190,15 +233,55 @@ def multiClass_Classification(HTMLCSVfile, outputPath):
     y = label_binarize(y, classes=[0, 1, 2, 3])
     n_classes = y.shape[1]
 
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.33, random_state=0)
-    clf = OneVsRestClassifier( LinearSVC(random_state=0, dual=True, max_iter=100000) )
+    useCrossValidation, useFeatureSelection = 0, 0
+    numTrials = 3
+    kfold = 5
+    useRECF = 1
+    nFeat = 5
+    featureRanks = np.zeros(shape=(kfold*numTrials, dim))
+    
+    if ( not useCrossValidation ) and (not useFeatureSelection):
+        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.33, random_state=0)
+        clf = OneVsRestClassifier( LinearSVC(random_state=0, dual=True, max_iter=100000) )
 
-    y_score = clf.fit(X_train, y_train).decision_function(X_test)
+        y_score = clf.fit(X_train, y_train).decision_function(X_test)
 
-    plaque_list = ['Calcium', 'Fibrous', 'IPH_lipid', 'IPH']
-    color_list = ['royalblue', 'firebrick', 'darkgrey', 'green']
+        plaque_list = ['Calcium', 'Fibrous', 'IPH_lipid', 'IPH']
+        color_list = ['royalblue', 'firebrick', 'darkgrey', 'green']
 
-    plotROCcurve(y_test, y_score, n_classes, plaque_list, color_list, outputPath)
+        plotROCcurve(y_test, y_score, n_classes, plaque_list, color_list, outputPath)
+        print("finish the task")
+    
+    if (useCrossValidation) and (useFeatureSelection):
+
+        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.33, random_state=0)
+
+        if(not useRECF):
+            scores = getFeatureScores(X_train, y_train, "Extra Trees", nFeat)
+            featureSubsetIndices = getTopKFeatureIndices(scores, nFeat)
+            ordered = np.argsort(scores)
+            X_train = X_train[:, featureSubsetIndices]
+            X_test = X_test[:, featureSubsetIndices]
+            fIter = 1
+            for fidx in ordered:
+                featureRanks[i, fidx] = fIter
+                fIter = fIter + 1
+        else:
+            rfecv = RFECV(estimator=SVC, step=1,
+                        cv=StratifiedKFold(3), scoring='accuracy')
+            rfecv.fit(X_train, y_train)
+            X_train = rfecv.transform(X_train)
+            X_test = rfecv.transform(X_test)
+            nfeat = rfecv.n_features_
+            featureRanks[i, :] = rfecv.ranking_
+            print("top features:  " + str(nfeat))
+
+        clf = OneVsRestClassifier(
+            LinearSVC(random_state=0, dual=True, max_iter=100000))
+
+        y_score = clf.fit(X_train, y_train).decision_function(X_test)   
 
 
-# multiClass_Classification(HTMLCSVfile, outputPath)
+multiClass_Classification(HTMLCSVfile, outputPath)
+
+## https://www.codespeedy.com/multiclass-classification-using-scikit-learn/
