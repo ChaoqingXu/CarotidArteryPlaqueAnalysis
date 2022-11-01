@@ -237,7 +237,6 @@ def multiClass_Classification(HTMLCSVfile, outputPath):
             plaque_Assignment[i, :] = 3, 1
             categoryList.append('IPH')
             y.append(3)
-    y_categoryList = y
 
     # # # shuffle and split training and test sets
     y = label_binarize(y, classes=[0, 1, 2, 3])
@@ -288,26 +287,11 @@ def multiClass_Classification(HTMLCSVfile, outputPath):
                 topKfeaturenameList.append( feature )  ## get feature name by top k features
                 topKfeature.append(np.float64(X[:, i]))
 
-            print(np.shape(topKfeature))
-            print(np.shape(topKfeaturenameList))
-            print(np.shape(categoryList))
-            print(np.shape(y_categoryList))
-            print(np.shape(plaque_list))
-
             topKfeature = np.transpose(topKfeature)
-            # topKfeature = [topKfeature, categoryList]
-            # topKfeaturenameList = topKfeaturenameList.append("category")
+            df = pd.DataFrame(topKfeature, columns=topKfeaturenameList)
 
-            # topKData = ({
-            #     'topK feature List': topKfeaturenameList,
-            #     'topK feature': topKfeature,
-            #     'category List': categoryList
-            # })
-            
-
-            df = pd.DataFrame(topKfeature, columns = topKfeaturenameList, index = y_categoryList)
-            sns.pairplot(df)
-            # sns.pairplot(df, hue="species", markers=["o", "s", "D"])
+            df.insert(0, "category", categoryList)   
+            sns.pairplot(df, hue="category", palette="husl", diag_kind="hist")
             plt.show()
 
         else:
