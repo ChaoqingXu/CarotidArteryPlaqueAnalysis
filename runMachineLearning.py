@@ -1,3 +1,5 @@
+import seaborn as sns
+from sklearn.preprocessing import StandardScaler
 from sklearn.feature_selection import RFECV
 from sklearn.ensemble import ExtraTreesClassifier
 from sklearn.ensemble import RandomForestClassifier, AdaBoostClassifier
@@ -204,8 +206,10 @@ def plotROCcurve(y_test, y_score, n_classes, plaque_list, color_list, _path):
 
 def multiClass_Classification(HTMLCSVfile, outputPath):
     HTMLplot_list, label_dictionary, subject_Category_List = readHTMLCSVfile(HTMLCSVfile)
-    nsample, dim = np.shape(HTMLplot_list)
+    nsample, dim = np.shape(HTMLplot_list) #nsample = 92, dim = 389
     plaque_Assignment = mat(zeros((nsample, 2)))
+    plaque_list = ['Calcium', 'Fibrous', 'IPH_lipid', 'IPH']
+    color_list = ['royalblue', 'firebrick', 'darkgrey', 'green']
 
     X = []
     for i in range(nsample):
@@ -215,39 +219,46 @@ def multiClass_Classification(HTMLCSVfile, outputPath):
         X.append(tmp)
 
     y = []
+    categoryList = []
     for i in range(len(subject_Category_List)):
         if subject_Category_List[i].endswith('Calcium'):
             plaque_Assignment[i, :] = 0, 1
+            categoryList.append('Calcium')
             y.append(0)
         if subject_Category_List[i].endswith('Fibrous'):
             plaque_Assignment[i, :] = 1, 1
+            categoryList.append('Fibrous')
             y.append(1)
         if subject_Category_List[i].endswith('IPH_lipid'):
             plaque_Assignment[i, :] = 2, 1
+            categoryList.append('IPH_lipid')
             y.append(2)
         if subject_Category_List[i].endswith('IPH'):
             plaque_Assignment[i, :] = 3, 1
+            categoryList.append('IPH')
             y.append(3)
+    y_categoryList = y
 
     # # # shuffle and split training and test sets
     y = label_binarize(y, classes=[0, 1, 2, 3])
     n_classes = y.shape[1]
 
-    useCrossValidation, useFeatureSelection = 0, 0
+    useCrossValidation, useFeatureSelection, useRECF = 1, 1, 0
     numTrials = 3
     kfold = 5
-    useRECF = 1
     nFeat = 5
     featureRanks = np.zeros(shape=(kfold*numTrials, dim))
     
-    if ( not useCrossValidation ) and (not useFeatureSelection):
+    if ( not useCrossValidation ) and ( not useFeatureSelection ):
         X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.33, random_state=0)
+        
+        scaler = StandardScaler()
+        X_train = scaler.fit_transform(X_train)
+        X_test = scaler.transform(X_test)
+        
         clf = OneVsRestClassifier( LinearSVC(random_state=0, dual=True, max_iter=100000) )
 
         y_score = clf.fit(X_train, y_train).decision_function(X_test)
-
-        plaque_list = ['Calcium', 'Fibrous', 'IPH_lipid', 'IPH']
-        color_list = ['royalblue', 'firebrick', 'darkgrey', 'green']
 
         plotROCcurve(y_test, y_score, n_classes, plaque_list, color_list, outputPath)
         print("finish the task")
@@ -256,16 +267,49 @@ def multiClass_Classification(HTMLCSVfile, outputPath):
 
         X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.33, random_state=0)
 
+        scaler = StandardScaler()
+        X_train = scaler.fit_transform(X_train)
+        X_test = scaler.transform(X_test)
+
         if(not useRECF):
             scores = getFeatureScores(X_train, y_train, "Extra Trees", nFeat)
             featureSubsetIndices = getTopKFeatureIndices(scores, nFeat)
+            print(featureSubsetIndices) # top K feature indices
             ordered = np.argsort(scores)
+            # print(ordered) # feature order
             X_train = X_train[:, featureSubsetIndices]
             X_test = X_test[:, featureSubsetIndices]
-            fIter = 1
-            for fidx in ordered:
-                featureRanks[i, fidx] = fIter
-                fIter = fIter + 1
+
+            topKfeaturenameList = []
+            topKfeature = []
+            X = np.array(X)
+            for i in featureSubsetIndices:
+                feature = list(label_dictionary.keys())[list(label_dictionary.values()).index(i + 1)]
+                topKfeaturenameList.append( feature )  ## get feature name by top k features
+                topKfeature.append(np.float64(X[:, i]))
+
+            print(np.shape(topKfeature))
+            print(np.shape(topKfeaturenameList))
+            print(np.shape(categoryList))
+            print(np.shape(y_categoryList))
+            print(np.shape(plaque_list))
+
+            topKfeature = np.transpose(topKfeature)
+            # topKfeature = [topKfeature, categoryList]
+            # topKfeaturenameList = topKfeaturenameList.append("category")
+
+            # topKData = ({
+            #     'topK feature List': topKfeaturenameList,
+            #     'topK feature': topKfeature,
+            #     'category List': categoryList
+            # })
+            
+
+            df = pd.DataFrame(topKfeature, columns = topKfeaturenameList, index = y_categoryList)
+            sns.pairplot(df)
+            # sns.pairplot(df, hue="species", markers=["o", "s", "D"])
+            plt.show()
+
         else:
             rfecv = RFECV(estimator=SVC, step=1,
                         cv=StratifiedKFold(3), scoring='accuracy')
@@ -283,5 +327,4 @@ def multiClass_Classification(HTMLCSVfile, outputPath):
 
 
 multiClass_Classification(HTMLCSVfile, outputPath)
-
 ## https://www.codespeedy.com/multiclass-classification-using-scikit-learn/
